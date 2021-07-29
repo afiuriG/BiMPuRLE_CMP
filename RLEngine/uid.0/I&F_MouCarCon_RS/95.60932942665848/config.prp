@@ -1,0 +1,10 @@
+model=I&F
+environment=MouCarCon
+optimizer=RandomSeek
+batch=1
+worst=1
+steps=10000
+gamma=1.0
+fitnes=reward
+batch mode=all
+steps=10000

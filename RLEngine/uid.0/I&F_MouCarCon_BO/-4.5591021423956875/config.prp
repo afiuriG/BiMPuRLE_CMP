@@ -1,0 +1,11 @@
+model=I&F
+environment=MouCarCon
+optimizer=BayesOpt
+batch=1
+worst=1
+steps=10
+gamma=1.0
+algorithm=tpe
+fitnes=reward
+batch mode=all
+steps=10

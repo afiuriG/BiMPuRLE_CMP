@@ -1,0 +1,47 @@
+<?xml version="1.0" ?>
+<Model name="I&amp;F">
+   <NeuralNetwork name="TW_I&amp;F_Letch">
+      <neuron name="PVD" gleak="1.0" vleak="-70.0" cm="0.05" potencial="-70.40899893850448" testGleak="4.725907439879383" testVleak="-56.36358010372386" testCm="0.5060093735789933" testPotencial="-70.0"/>
+      <neuron name="PLM" gleak="1.0" vleak="-70.0" cm="0.05" potencial="-35.997978805130394" testGleak="4.477843493052104" testVleak="-21.582395928382237" testCm="0.056377139550566" testPotencial="-70.0"/>
+      <neuron name="AVA" gleak="1.0" vleak="-70.0" cm="0.05" potencial="-67.25978405414457" testGleak="4.712425181010177" testVleak="-78.08749014458894" testCm="0.3740705447395112" testPotencial="-70"/>
+      <neuron name="AVD" gleak="1.0" vleak="-70.0" cm="0.05" potencial="-40.39595325814458" testGleak="1.2180589605656065" testVleak="-83.28960206894997" testCm="0.17977153011049565" testPotencial="-70"/>
+      <neuron name="PVC" gleak="1.0" vleak="-70.0" cm="0.05" potencial="-70.34196148711116" testGleak="2.4058427627043093" testVleak="-68.31490086854302" testCm="0.6141473252848177" testPotencial="-70"/>
+      <neuron name="AVB" gleak="1.0" vleak="-70.0" cm="0.05" potencial="-21.13932433069278" testGleak="0.4517322162465412" testVleak="-75.06650687271606" testCm="0.7693355949759819" testPotencial="-70"/>
+      <neuron name="AVM" gleak="1.0" vleak="-70.0" cm="0.05" potencial="-26.15335965653674" testGleak="3.3202473869339775" testVleak="-86.45846320846353" testCm="0.5482424323985922" testPotencial="7.589642220290017"/>
+      <neuron name="ALM" gleak="1.0" vleak="-70.0" cm="0.05" potencial="-51.76607984579818" testGleak="0.9407910051771612" testVleak="-16.752287374924872" testCm="0.5509959011873404" testPotencial="-57.30357645030684"/>
+      <neuron name="DVA" gleak="1.0" vleak="-70.0" cm="0.05" potencial="-52.783220518598476" testGleak="0.432196041188627" testVleak="-48.686611759407796" testCm="0.8664952275056934" testPotencial="-70"/>
+      <neuron name="FWD" gleak="1.0" vleak="-70.0" cm="0.05" potencial="-11.911852610601759" testGleak="0.5357957297909511" testVleak="-60.12815580816246" testCm="0.8923304987829229" testPotencial="-70"/>
+      <neuron name="REV" gleak="1.0" vleak="-70.0" cm="0.05" potencial="-12.095779140479523" testGleak="0.7930609169609195" testVleak="-38.41901720188068" testCm="0.6046285983724771" testPotencial="-70"/>
+      <connection connType="ConnectionType.ChemIn" connSource="PVD" connTarget="AVA" connWeight="0.60996" connSigma="0.1" testWeight="2.2038300914606435" testSigma="0.09805224256037826"/>
+      <connection connType="ConnectionType.ChemIn" connSource="PLM" connTarget="AVA" connWeight="0.84907" connSigma="0.1" testWeight="0.7205722005509613" testSigma="0.13185653226623767"/>
+      <connection connType="ConnectionType.ChemEx" connSource="PVC" connTarget="AVA" connWeight="1.327515" connSigma="0.1" testWeight="1.9409604775131883" testSigma="0.4081102771106631"/>
+      <connection connType="ConnectionType.ChemIn" connSource="AVB" connTarget="AVA" connWeight="0.22908" connSigma="0.1" testWeight="2.5053827749247564" testSigma="0.4184784635275902"/>
+      <connection connType="ConnectionType.ChemEx" connSource="AVD" connTarget="AVA" connWeight="1.656176" connSigma="0.1" testWeight="2.476454788681696" testSigma="0.3656964816797906"/>
+      <connection connType="ConnectionType.ChemIn" connSource="PLM" connTarget="AVD" connWeight="0.0" connSigma="0.1" testWeight="2.656632806941732" testSigma="0.29684217400160756"/>
+      <connection connType="ConnectionType.ChemEx" connSource="PVC" connTarget="AVD" connWeight="0.900241" connSigma="0.1" testWeight="0.32732025391317304" testSigma="0.1850133177164155"/>
+      <connection connType="ConnectionType.ChemIn" connSource="AVA" connTarget="AVD" connWeight="0.488061" connSigma="0.1" testWeight="2.7127748712097746" testSigma="0.1531205366295582"/>
+      <connection connType="ConnectionType.ChemIn" connSource="AVB" connTarget="AVD" connWeight="0.443871" connSigma="0.1" testWeight="0.803028093406005" testSigma="0.07794495678447091"/>
+      <connection connType="ConnectionType.AGJ" connSource="AVM" connTarget="AVD" connWeight="1.72995" connSigma="0.1" testWeight="2.996585326065916" testSigma="0.36188543396798967"/>
+      <connection connType="ConnectionType.ChemIn" connSource="ALM" connTarget="AVD" connWeight="0.0" connSigma="0.1" testWeight="0.38980357265926135" testSigma="0.08731733773391581"/>
+      <connection connType="ConnectionType.ChemIn" connSource="PVD" connTarget="PVC" connWeight="0.59057" connSigma="0.1" testWeight="1.3439017177981991" testSigma="0.12388118693384145"/>
+      <connection connType="ConnectionType.AGJ" connSource="PLM" connTarget="PVC" connWeight="0.0388042" connSigma="0.1" testWeight="0.15972398237029628" testSigma="0.278643935145452"/>
+      <connection connType="ConnectionType.ChemIn" connSource="AVA" connTarget="PVC" connWeight="0.2" connSigma="0.1" testWeight="0.3840469490370815" testSigma="0.2711010921276367"/>
+      <connection connType="ConnectionType.ChemEx" connSource="AVD" connTarget="PVC" connWeight="1.343" connSigma="0.1" testWeight="0.31551351306609055" testSigma="0.34988705289101246"/>
+      <connection connType="ConnectionType.ChemIn" connSource="AVM" connTarget="PVC" connWeight="0.147041" connSigma="0.1" testWeight="2.7347322945522703" testSigma="0.2819054577312601"/>
+      <connection connType="ConnectionType.ChemIn" connSource="ALM" connTarget="PVC" connWeight="0.70817" connSigma="0.1" testWeight="0.3216336744384304" testSigma="0.36033239013055196"/>
+      <connection connType="ConnectionType.ChemIn" connSource="DVA" connTarget="PVC" connWeight="0.865243" connSigma="0.1" testWeight="0.5346991719291984" testSigma="0.1924845512179244"/>
+      <connection connType="ConnectionType.ChemEx" connSource="PVC" connTarget="AVB" connWeight="0.948166" connSigma="0.1" testWeight="1.066355884101704" testSigma="0.10352495226286385"/>
+      <connection connType="ConnectionType.ChemIn" connSource="AVA" connTarget="AVB" connWeight="0.58725" connSigma="0.1" testWeight="0.6915310332680704" testSigma="0.13861735828872404"/>
+      <connection connType="ConnectionType.ChemEx" connSource="AVD" connTarget="AVB" connWeight="1.53322" connSigma="0.1" testWeight="1.290355215855156" testSigma="0.4989375258111859"/>
+      <connection connType="ConnectionType.ChemIn" connSource="PVD" connTarget="DVA" connWeight="0.90098" connSigma="0.1" testWeight="1.8046893894526133" testSigma="0.10702136926408438"/>
+      <connection connType="ConnectionType.ChemIn" connSource="PLM" connTarget="DVA" connWeight="0.91319" connSigma="0.1" testWeight="0.2069576215948749" testSigma="0.18961669237961604"/>
+      <connection connType="ConnectionType.ChemEx" connSource="PVC" connTarget="DVA" connWeight="1.427991" connSigma="0.1" testWeight="2.869007114876533" testSigma="0.25008514350598154"/>
+      <connection connType="ConnectionType.ChemEx" connSource="AVB" connTarget="FWD" connWeight="2.0" connSigma="0.1" testWeight="1.6833770290734351" testSigma="0.12791362181262808"/>
+      <connection connType="ConnectionType.ChemEx" connSource="AVA" connTarget="REV" connWeight="2.0" connSigma="0.1" testWeight="0.9104703416544413" testSigma="0.0669758643970855"/>
+   </NeuralNetwork>
+   <Interfaces>
+      <interface name="IN1" maxPotencial="-20.0" minPotencial="-70.0" maxValue="0.3" minValue="-0.3" value="-0.4655378533217401" positiveNeuron="PLM" negativeNeuron="AVM" type="IN"/>
+      <interface name="IN2" maxPotencial="-20.0" minPotencial="-70.0" maxValue="0.02" minValue="-0.02" value="0.005078569419877263" positiveNeuron="ALM" negativeNeuron="PVD" type="IN"/>
+      <interface name="OUT1" maxPotencial="-20.0" minPotencial="-70.0" maxValue="1.0" minValue="-1.0" value="0" positiveNeuron="FWD" negativeNeuron="REV" type="OUT"/>
+   </Interfaces>
+</Model>
