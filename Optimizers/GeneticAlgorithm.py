@@ -3,18 +3,19 @@ import configparser
 import pygad
 import matplotlib.pyplot as plt
 import os
-import Models.IFNeuronalCircuit.ModelInterfaces as modint
-
+import datetime
 
 class GeneticAlgorithm:
-    def __init__(self):
+    def __init__(self,source=None):
         #params for using pygad
+        self.isTimedBased=False
+        self.starttime=None
         self.rootpath=''
         self.rlengine=None
         self.fitness_function = None
+        self.on_generation = None
         self.initial_population = []
         self.save_best_solutions = True
-        #self.model_interface = None
         self.batch_mode = ''
         self.fit_type = ''
         self.pygadInstance=None
@@ -48,33 +49,60 @@ class GeneticAlgorithm:
         self.num_genes=0
         self.gene_type = None
         self.gene_space = None
+        self.source=source
 
 
 
     #Our individuals are the solutions so an instance of the value  of the paramters but flattened to a list.
     def populationModelsCreation(self,numIndiv):
-        for n in range(0,numIndiv):
-            self.rlengine.model.loadFromFile('Letchner/TWLetchBase.xml')
-            modint.randonizeModel(self.rlengine.model)
-            modelToIndiv=modint.getIndividualForPYGAD(self.rlengine.model)
+        fileNameList = os.listdir(self.source)
+        if self.source==None:
+            self.rlengine.model.loadFromFile(self.rlengine.getModelBasePath())
+            modelToIndiv = self.rlengine.modelInterface.getIndividualForPYGAD(self.rlengine.model)
             self.initial_population.append(modelToIndiv)
+            for n in range(1,numIndiv):
+                self.rlengine.model.loadFromFile(self.rlengine.getModelBasePath())
+                self.rlengine.modelInterface.randonizeModel(self.rlengine.model)
+                self.rlengine.model.commitNoise()
+                modelToIndiv=self.rlengine.modelInterface.getIndividualForPYGAD(self.rlengine.model)
+                self.initial_population.append(modelToIndiv)
+        else:
+            sourceSize=len(fileNameList)
+            if sourceSize<numIndiv:
+                for name in fileNameList:
+                    file = self.source + '/' + name
+                    self.rlengine.restorePickleModel(file)
+                    modelToIndiv = self.rlengine.modelInterface.getIndividualForPYGAD(self.rlengine.model)
+                    self.initial_population.append(modelToIndiv)
+                for n in range(0,numIndiv-sourceSize):
+                    self.rlengine.restorePickleModel(self.source+'/baseModel')
+                    self.rlengine.modelInterface.randonizeModel(self.rlengine.model)
+                    modelToIndiv=self.rlengine.modelInterface.getIndividualForPYGAD(self.rlengine.model)
+                    self.initial_population.append(modelToIndiv)
+            else:
+                for n in range(0,numIndiv):
+                    file = self.source + '/' + fileNameList[n]
+                    self.rlengine.restorePickleModel(file)
+                    modelToIndiv = self.rlengine.modelInterface.getIndividualForPYGAD(self.rlengine.model)
+                    self.initial_population.append(modelToIndiv)
+
 
 
     def initialize(self,engine):
+        self.starttime = datetime.datetime.now()
         self.fitness_function = self.fitness
+        self.on_generation = self.ongen
         self.rootpath = engine.rootpath
         self.rlengine = engine
         self.num_generations = engine.steps
-        #model_interface=engine.model.getModelInterface()
+        currDirname = os.path.dirname(__file__)
+        patherDir=os.path.join(currDirname, '..')
+        path=os.path.join(patherDir,"RLEngine/load.conf")
         config = configparser.RawConfigParser()
-        path = "../RLEngine/load.conf"
         config.read(path)
-        self.batch_mode = config.get('BAYES', 'batchmode')
-        self.fit_type = config.get('BAYES', 'fit')
+        self.batch_mode = config.get('GENALG', 'batchmode')
+        self.fit_type = config.get('GENALG', 'fit')
         self.num_individuos = int(config.get('GENALG', 'NumIndividuals'))
-        #comes from the command line
-        #global num_generations
-        #num_generations = int(config.get('GENALG', 'NumGenerations'))
         self.num_parents_mating = int(config.get('GENALG', 'NumParentsMating'))
         self.keep_parents = int(config.get('GENALG', 'KeepParents'))
         self.parent_selection_type = config.get('GENALG', 'ParentSelectionType')
@@ -83,14 +111,15 @@ class GeneticAlgorithm:
         self.mutation_type=config.get('GENALG', 'MutationType')
         self.mutation_by_replacement = bool(config.get('GENALG', 'MutationByReplacement'))
         self.mutation_num_genes = parseMutNumGenes(config.get('GENALG', 'MutationNumGenes'))
-        self.num_genes=modint.getNumGenes()
-        self.gene_type=modint.getGeneType()
-        self.gene_space=modint.getGeneSpace()
+        self.num_genes=self.rlengine.modelInterface.getNumGenes()
+        self.gene_type=self.rlengine.modelInterface.getGeneType()
+        self.gene_space=self.rlengine.modelInterface.getGeneSpace()
         #CHEQUEAR
         self.populationModelsCreation(self.num_individuos)
         self.pygadInstance = pygad.GA(num_generations=self.num_generations,
                                           num_parents_mating=self.num_parents_mating,
                                           fitness_func=self.fitness_function,
+#                                          callback_generation=self.callback_generation,
                                           num_genes=self.num_genes,
                                           initial_population=self.initial_population,
                                           gene_type=self.gene_type,
@@ -102,14 +131,17 @@ class GeneticAlgorithm:
                                           mutation_by_replacement=self.mutation_by_replacement,
                                           mutation_num_genes=self.mutation_num_genes,
                                           gene_space=self.gene_space,
-                                          save_best_solutions=self.save_best_solutions)
+                                          save_best_solutions=self.save_best_solutions,
+                                          on_generation=self.on_generation)
                                           #on_fitness=on_fitness,
                                           #on_generation=on_generation,
                                           #on_crossover=on_crossover,
                                           #on_mutation=on_mutation,
                                           #on_parents=on_parents)
 
-    def run(self):
+    def run(self,mode=None):
+        if mode=='timed':
+            self.isTimedBased=True
         self.pygadInstance.run()
 
     def setPath(self):
@@ -118,10 +150,17 @@ class GeneticAlgorithm:
             os.makedirs(self.rootpath + '/' + label)
         self.rootpath=self.rootpath + '/' + label
 
+    def getFolder(self):
+        return str(self.pygadInstance.best_solutions_fitness[self.pygadInstance.best_solution_generation])
+
+
     def getPath(self):
         return self.rootpath
 
-    def plotResult(self):
+    def putOptModelIntoRLEModel(self):
+        self.rlengine.modelInterface.putIndividualFromPYGAD(self.rlengine.model, self.pygadInstance.best_solutions[self.pygadInstance.best_solution_generation])
+
+    def plotResult(self,mode=None):
         ordenadas=self.pygadInstance.best_solutions_fitness
         abscisas = [i for i in range(0,len(ordenadas))]
         plt.plot(abscisas, ordenadas, 'ro',label='reward')
@@ -131,10 +170,6 @@ class GeneticAlgorithm:
         plt.title('Rewards vs Generations')
         plt.savefig(self.rootpath+'/rewards.png', bbox_inches='tight')
         plt.show()
-
-    def saveModel(self):
-        modint.putIndividualFromPYGAD(self.rlengine.model,self.pygadInstance.best_solutions[self.pygadInstance.best_solution_generation])
-        self.rlengine.model.dumpModel(self.rootpath+'/model.xml')
 
     def saveConfig(self):
         confFile = open(self.rootpath  + '/config.prp', 'w')
@@ -155,12 +190,33 @@ class GeneticAlgorithm:
         confFile.write("batch_mode=%s\n" % ( self.batch_mode ) )
         confFile.close()
 
-
+    def ongen(self):
+        print("Generation", self.pygadInstance.generations_completed)
+        if self.isTimedBased:
+            elapsedTime = (datetime.datetime.now() - self.starttime).total_seconds()
+            if elapsedTime > self.rlengine.steps:
+                return "stop"
+        # print(ga.population)
 
     def fitness(self,indiv,indivIdx):
-        modint.putIndividualFromPYGAD(self.rlengine.model,indiv)
+        self.rlengine.modelInterface.putIndividualFromPYGAD(self.rlengine.model,indiv)
         fit = (self.rlengine.runEpisodes(self.fit_type, self.batch_mode))
+        #print('fit,',fit)
+        # if self.isTimedBased:
+        #     elapsedTime = (datetime.datetime.now() - self.starttime).total_seconds()
+        #     if elapsedTime > self.rlengine.steps:
+        #         self.pygadInstance.run_completed=True
         return fit
+
+    # def callbackgen(self):
+    #     if self.isTimedBased:
+    #         elapsedTime = (datetime.datetime.now() - self.starttime).total_seconds()
+    #         if elapsedTime > self.rlengine.steps:
+    #             return "stop"
+
+
+
+
 
     def getName(self):
         return 'GeneticAlgorithm'
@@ -181,9 +237,6 @@ def on_parents(ga, selected_parents):
     print("Parents", ga.generations_completed)
     print(selected_parents)
 
-def on_generation(ga):
-    print("Generation", ga.generations_completed)
-    print(ga.population)
 
 def on_crossover(ga,offspring_crossover):
     print("Crossover", ga.generations_completed)

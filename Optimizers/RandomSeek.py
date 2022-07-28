@@ -1,19 +1,18 @@
-import numpy as np
-import datetime
-import random as rng
 import configparser
 import os
 import matplotlib.pyplot as plt
+import copy
+import datetime
 
-
-
-
+#this Random Seek in fact is only to IFModel
 class RandomSeek:
+
+
+    global modelos
+    global stateToChangeTrace
 
     def __init__(self):
         self.rlengine=None
-        self.distortions={}
-        self.variances={}
         self.batch_mode=''
         self.fit_type=''
         self.values={}
@@ -25,51 +24,79 @@ class RandomSeek:
 
     def initialize(self,engine):
         self.rlengine=engine
+        currDirname = os.path.dirname(__file__)
+        patherDir=os.path.join(currDirname, '..')
+        path=os.path.join(patherDir,"RLEngine/load.conf")
+        #print(str(path))
         config = configparser.RawConfigParser()
-        path = "../RLEngine/load.conf"
+        #path = "../RLEngine/load.conf"
         config.read(path)
         self.batch_mode = config.get('RANDOMSEEK', 'batchmode')
         self.fit_type = config.get('RANDOMSEEK', 'fit')
+        global modelos
+        modelos=[]
 
     def getName(self):
         return 'RandomSeek'
 
-    def run(self):
+
+
+
+    def run(self,mode=None):
+        if mode=='graphSearch':
+            self.rlengine.model.updateStateToTrace()
+            #print(id(self.rlengine.model))
         log_freq=100
-        self.setInitialDistortions()
-        self.setInitialVariance()
-        self.randonize()
+        #modelVar=copy.deepcopy(self.rlengine.model)
+        self.rlengine.modelInterface.setInitialDistortions()
+        self.rlengine.modelInterface.setInitialVariance()
+        self.rlengine.modelInterface.randonize(self.rlengine.model)
+        if mode=='graphSearch':
+            self.rlengine.model.updateStateToTrace()
+            #print(id(self.rlengine.model))
         self.rlengine.model.commitNoise()
         current_return=self.rlengine.runEpisodes(self.fit_type,self.batch_mode)
         self.values[0] = current_return
         self.toPlotOrd.append(current_return)
         self.toPlotAbs.append(0)
         self.bestReward=current_return
-        self.bestSolution=self.rlengine.model.clone()
-        self.setBaseDistortions()
+        self.bestSolution=copy.deepcopy(self.rlengine.model)
+        self.rlengine.modelInterface.setBaseDistortions()
         steps_since_last_improvement = 0
         steps_since_last_improvement2 = 0
         steps = 0
+        starttime = datetime.datetime.now()
+        #if mode is timed the steps parameter is intended to store the threshold time
         while steps < self.rlengine.steps:
-            steps += 1
-            self.setStepDistortions()
-            self.setStepVariance()
-            self.randonize()
+            if mode=='timed':
+                steps=(datetime.datetime.now() - starttime).total_seconds()
+            else:
+                steps += 1
+            #self.rlengine.modelInterface.setStepDistortions()
+            self.rlengine.modelInterface.setStepVariance()
+            #modelVar = copy.deepcopy(self.rlengine.model)
+            self.rlengine.modelInterface.randonize(self.rlengine.model)
+            if mode == 'graphSearch':
+                self.rlengine.model.updateStateToTrace()
+                #print(id(self.rlengine.model))
             new_return = self.rlengine.runEpisodes(self.fit_type, self.batch_mode)
+            #print('new ret:%s'%(new_return))
             if (new_return > current_return):
                 print('Improvement! New Return: %s, old: %s' % (new_return,current_return))
-                if new_return>self.bestReward :
-                    #if new_return > self.bestReward and new_return > 90:
-                    print('Best Improvement! New Return: %s, old: %s' % (new_return,current_return))
-                    self.bestSolution=self.rlengine.model.clone()
-                    self.bestReward=new_return
-                    self.toPlotOrd.append(new_return)
-                    self.toPlotAbs.append(steps)
-                current_return = new_return
                 self.rlengine.model.commitNoise()
+                if new_return>self.bestReward :
+                    if new_return > self.bestReward :
+                        print('Best Improvement! New Return: %s, old: %s' % (new_return,current_return))
+                        self.bestSolution=copy.deepcopy(self.rlengine.model)
+                        self.bestSolution.setName('CP'+str(steps))
+                        #print(str(id(self.bestSolution)))
+                        self.bestReward=new_return
+                        self.toPlotOrd.append(new_return)
+                        self.toPlotAbs.append(steps)
+                current_return = new_return
                 steps_since_last_improvement = 0
                 steps_since_last_improvement2 = 0
-                self.setDecresedDistortions()
+                self.rlengine.modelInterface.setDecresedDistortions()
             else:
                 steps_since_last_improvement += 1
                 steps_since_last_improvement2 +=1
@@ -79,94 +106,22 @@ class RandomSeek:
                     print('more than 50 steps...')
                     steps_since_last_improvement = 0
                     steps_since_last_improvement2 += 1
-                    self.setIncresedDistortions()
+                    self.rlengine.modelInterface.setIncresedDistortions()
                 if (steps_since_last_improvement > 50)and(steps_since_last_improvement2 > 300):
                     print('more than 300 steps without improvement...')
                     steps_since_last_improvement=0
                     steps_since_last_improvement2=0
-                    self.randozieAll()
+                    self.rlengine.modelInterface.randozieAll(self.rlengine.model)
                     self.rlengine.model.commitNoise()
             if (steps % log_freq == 0):
                 self.toPlotOrd.append(new_return)
                 self.toPlotAbs.append(steps)
-            print('paso el:'+str(steps))
-
-
-    def setInitialDistortions(self):
-        self.distortions['weight']=15
-        self.distortions['vleak'] = 8
-        self.distortions['gleak'] = 8
-        self.distortions['sigma'] = 10
-        self.distortions['cm'] = 10
-
-    def setInitialVariance(self):
-        self.variances['weight']=0.5
-        self.variances['vleak'] = 8
-        self.variances['gleak'] = 0.2
-        self.variances['sigma'] = 0.2
-        self.variances['cm'] = 0.1
-
-    def setBaseDistortions(self):
-        self.distortions['weight']=6
-        self.distortions['vleak'] = 5
-        self.distortions['gleak'] = 4
-        self.distortions['sigma'] = 5
-        self.distortions['cm'] = 4
-
-
-    def setStepDistortions(self):
-        self.distortions['weight']=rng.randint(0, self.distortions['weight'])
-        self.distortions['vleak'] = rng.randint(0, self.distortions['vleak'])
-        self.distortions['gleak'] = rng.randint(0, self.distortions['gleak'])
-        self.distortions['sigma'] = rng.randint(0, self.distortions['sigma'])
-        self.distortions['cm'] = rng.randint(0, self.distortions['cm'])
-
-    def setStepVariance(self):
-        self.variances['weight']=rng.uniform(0.01, 0.8)
-        self.variances['vleak'] =  rng.uniform(0.1, 3)
-        self.variances['gleak']  = rng.uniform(0.05, 0.8)
-        self.variances['sigma'] = rng.uniform(0.01, 0.08)
-        self.variances['cm'] = rng.uniform(0.01, 0.3)
-
-    def setDecresedDistortions(self):
-        if (self.distortions['weight'] > 6):
-            self.distortions['weight'] -= 1
-        if (self.distortions['sigma'] > 5):
-            self.distortions['sigma'] -= 1
-        if (self.distortions['vleak'] > 4):
-            self.distortions['vleak'] -= 1
-        if (self.distortions['gleak'] > 4):
-            self.distortions['gleak'] -= 1
-        if (self.distortions['cm'] > 4):
-            self.distortions['cm'] -= 1
-
-    def setIncresedDistortions(self):
-        if (self.distortions['weight'] < 16):
-            self.distortions['weight'] += 1
-        if (self.distortions['sigma'] < 12):
-            self.distortions['sigma'] += 1
-        if (self.distortions['vleak'] < 8):
-            self.distortions['vleak'] += 1
-        if (self.distortions['gleak'] < 8):
-            self.distortions['gleak'] += 1
-        if (self.distortions['cm'] < 7):
-            self.distortions['cm'] += 1
+            print('step:'+str(steps))
+        self.rlengine.model=self.bestSolution
+        print("Better Soluition: "+self.rlengine.model.getName())
 
 
 
-    def randonize(self):
-        self.rlengine.model.addNoise('Weight', self.variances['weight'], self.distortions['weight'])
-        self.rlengine.model.addNoise('Vleak', self.variances['vleak'], self.distortions['vleak'])
-        self.rlengine.model.addNoise('Gleak', self.variances['gleak'], self.distortions['gleak'])
-        self.rlengine.model.addNoise('Sigma', self.variances['sigma'], self.distortions['sigma'])
-        self.rlengine.model.addNoise('Cm', self.variances['cm'], self.distortions['cm'])
-
-    def randozieAll(self):
-        self.rlengine.model.addNoise('Weight', 0.5, 26)
-        self.rlengine.model.addNoise('Vleak', 10, 11)
-        self.rlengine.model.addNoise('Gleak', 0.2, 11)
-        self.rlengine.model.addNoise('Sigma', 0.2, 26)
-        self.rlengine.model.addNoise('Cm', 0.1, 11)
 
     def setPath(self):
         label=str(self.bestReward)
@@ -184,10 +139,18 @@ class RandomSeek:
         confFile.write("steps=%s\n" % (self.rlengine.steps ) )
         confFile.close()
 
-    def saveModel(self):
-        self.bestSolution.dumpModel(self.rootpath+'/model.xml')
+    def putOptModelIntoRLEModel(self):
+        #already is in the model the optimized one
+        #self.rlengine.model=self.bestSolution
+        pass
 
-    def plotResult(self):
+    def getFolder(self):
+        return  str(self.bestReward)
+
+    #def saveModel(self):
+    #    self.bestSolution.dumpModel(self.rootpath+'/model.xml')
+
+    def plotResult(self,mode=None):
         ordenadas=self.toPlotOrd
         abscisas = self.toPlotAbs
         plt.plot(abscisas, ordenadas, 'ro',label='reward')
@@ -197,6 +160,8 @@ class RandomSeek:
         plt.title('Rewards vs Steps')
         plt.savefig(self.rootpath+'/rewards.png', bbox_inches='tight')
         plt.show()
+        if mode == 'graphSearch':
+            self.rlengine.model.graphVariableTraces(self.rootpath)
 
 
     def recordResults(self,time):

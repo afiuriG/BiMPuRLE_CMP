@@ -3,11 +3,13 @@ from hyperopt import tpe
 from hyperopt import anneal
 from hyperopt import fmin
 from hyperopt import Trials
-
+import Models.Izhikevich.Model as mod
+import pickle
+import datetime
 import os
 import matplotlib.pyplot as plt
 
-import Models.IFNeuronalCircuit.ModelInterfaces as modint
+
 
 
 class Bayes:
@@ -23,10 +25,14 @@ class Bayes:
         self.hyperOpt_best_solution=None
         self.fit_type=''
         self.batch_mode=''
+        self.starttime = None
+        self.isTimeBased = False
+        self.starttime=None
+
 
     def hyperOptObjective(self, params):
         """Objective function to minimize"""
-        modint.putVariablesFromHyperOpt(self.rlengine.model,params)
+        self.rlengine.modelInterface.putVariablesFromHyperOpt(self.rlengine.model,params)
         fit = (self.rlengine.runEpisodes(self.fit_type,self.batch_mode))
         #print('fit:%s,f(fit):%s,g(f(fit)):%s'%(fit,f(fit),g(f(fit))))
         return f(fit)
@@ -34,10 +40,13 @@ class Bayes:
 
 
     def initialize(self,engine):
+        self.starttime = datetime.datetime.now()
         self.rootpath = engine.rootpath
         self.rlengine=engine
         config = configparser.RawConfigParser()
-        path= "../RLEngine/load.conf"
+        currDirname = os.path.dirname(__file__)
+        patherDir=os.path.join(currDirname, '..')
+        path=os.path.join(patherDir,"RLEngine/load.conf")
         config.read(path)
         self.batch_mode = config.get('BAYES', 'batchmode')
         self.fit_type = config.get('BAYES', 'fit')
@@ -48,15 +57,31 @@ class Bayes:
         elif(self.hyperOpt_algo_name=='anneal'):
             self.hyperOpt_algo = anneal.suggest
     # Create the domain space
-        self.hyperOptSpace=modint.getSpaceForHyperOpt(self.rlengine.model)
+        self.hyperOptSpace=self.rlengine.modelInterface.getSpaceForHyperOpt(self.rlengine.model)
     # Create a trials object
         self.hyperOpt_trials = Trials()
+        self.starttime = datetime.datetime.now()
+
+    def early_stopping_function(self):
+         if self.isTimeBased==True:
+             elapsedTime = (datetime.datetime.now() - self.starttime).total_seconds()
+             if elapsedTime > self.rlengine.steps:
+                 return True,"stop"
+             else:
+                 return False,"noStop"
+        #return True,"pepe"
 
 
-    def run(self):
+    def run(self,mode=None):
+        if mode=='timed':
+            self.isTimeBased=True
+            early_stopping = self.early_stopping_function
+        else:
+            early_stopping = None
         best = fmin(fn=self.hyperOptObjective, space=self.hyperOptSpace,
                     algo=self.hyperOpt_algo,
                     trials=self.hyperOpt_trials,
+                    early_stop_fn=early_stopping,
                     max_evals=self.rlengine.steps)
         self.hyperOpt_best_reward=g(self.hyperOpt_trials.best_trial['result']['loss'])
         self.hyperOpt_best_solution=best
@@ -70,13 +95,15 @@ class Bayes:
             os.makedirs(self.rootpath + label)
         self.rootpath=self.rootpath  + label
 
-    def saveModel(self):
-        #global rlengine
-        #global  hyperOpt_best_solution
-        modint.putVariablesFromHyperOpt(self.rlengine.model,self.hyperOpt_best_solution)
-        self.rlengine.model.dumpModel(self.rootpath+'/model.xml')
+    def getFolder(self):
+        return str(self.hyperOpt_best_reward)
 
-    def plotResult(self):
+
+    def putOptModelIntoRLEModel(self):
+        self.rlengine.modelInterface.putVariablesFromHyperOpt(self.rlengine.model, self.hyperOpt_best_solution)
+
+
+    def plotResult(self,mode=None):
         ordenadas=[]
         for item in self.hyperOpt_trials.results:
             ordenadas.append(g(item['loss']))
