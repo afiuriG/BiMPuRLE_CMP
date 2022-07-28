@@ -14,7 +14,7 @@ import sys
 from Optimizers import BayesOptim as ba, GeneticAlgorithm as ga
 
 
-#####This file has errors and is old, when was working was the version Python for  Letchner paper.
+#####This file has errors and is old, when was working was the version Python for  BaseModels paper.
 class TWsearchEnv:
 
     def __init__(self, env, filter_len, mean_len,steps):
@@ -88,17 +88,15 @@ class TWsearchEnv:
         #mepa que esta de mas
         #done2 = False
         while 1:
-            #action = self.lif.Update(observations, 0.01, 10)
             action = currModel.Update(observations,0.1,10,logUpd)
-            #el autor usaba asi action action[0], a mi me da action como un float directamente
             actions[0] = action
             obs, r, done, info = self.env.step(actions)
             #print ('obs : %s, reward: %r'%(obs,r))
             self.set_observations_for_lif(obs, observations)
-            if obs[0]<minObs:
-                minObs=obs[0]
-            if obs[0]>maxObs:
-                maxObs=obs[0]
+#            if obs[0]<minObs:
+#                minObs=obs[0]
+#            if obs[0]>maxObs:
+#                maxObs=obs[0]
             total_reward += r * gamma
             time += 0.0165
             #print('total y current reward: %s, %s'%(total_reward,r))
@@ -145,7 +143,7 @@ class TWsearchEnv:
         #print("tw:%s" % (str(np.mean(returns))))
         return [np.mean(worst_cases), np.mean(returns)]
 
-    def evaluate_avg(self):
+    def evaluate_avg2(self):
 
         N = 1000
         returns = np.zeros(N)
@@ -531,18 +529,18 @@ def demo_run():
     optimized=twenv.rootPath+'/dumpBestResult_97.7792890098983_97.7792890098983.xml'
     if (args.command=='Optimize'):
         print("Optimize")
-        twenv.twModel.load('Letchner/TWLetchBase.xml')
+        twenv.twModel.load('BaseModels/TWLetchBase.xml')
         twenv.twModel.name = 'RandomSeek'
         twenv.optimize_and_store(str(args.id), args.file)
     elif (args.command == 'OptimizeGA'):
         print("OptimizeGA")
-        twenv.twModel.load('Letchner/TWLetchBase.xml')
+        twenv.twModel.load('BaseModels/TWLetchBase.xml')
         twenv.twModel.name = 'GeneticAlgor'
         # twenv.twModel.load('results/fil_1_mean_1_steps_1000/dumpBestResult.99.09012119121958.xml')
         twenv.optimizePYGAD()
     elif (args.command == 'OptimizeBO'):
         print("OptimizeBO")
-        twenv.twModel.load('Letchner/TWLetchBase.xml')
+        twenv.twModel.load('BaseModels/TWLetchBase.xml')
         twenv.twModel.name = 'BayesOptim'
         # twenv.twModel.load('results/fil_1_mean_1_steps_1000/dumpBestResult.99.09012119121958.xml')
         twenv.optimizeHyperOpt()
@@ -591,10 +589,10 @@ if __name__ == "__main__":
 
     #twenv = TWsearchEnv(env, 1, 1, 1000)
     #twenv.generatePlots()
-    #twenv.twModel.load('Letchner/TWLetchBase.xml')
+    #twenv.twModel.load('BaseModels/TWLetchBase.xml')
     #twenv.twModel.load('')
     #print(twenv.twModel)
-    #twenv.twModel.dumpModel('Letchner/TWLetchBase2.xml')
+    #twenv.twModel.dumpModel('BaseModels/TWLetchBase2.xml')
     #print(twenv.run_one_episode(False))
     ####----GA----
     #pop = ga.populationCreation()

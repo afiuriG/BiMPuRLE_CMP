@@ -1,5 +1,7 @@
 import Models.IFNeuronalCircuit.Neuron as neu
 import Models.IFNeuronalCircuit.Connection as con
+import matplotlib.pyplot as plt
+import random
 
 V_Leak = -70
 Sigmoid_sigma = 0.1
@@ -15,6 +17,7 @@ class NeuralNetwork:
         self.neurons = {}
         self.connections = []
 
+
     def __str__(self):
         return "[nombre: %s, neuronas: %s, conexiones: %s]" % (
         self.name, " ".join(str(c) for c in self.neurons.values())," ".join(str(c) for c in self.connections))
@@ -24,13 +27,19 @@ class NeuralNetwork:
         return "[nombre: %s,  neuronas: %s,conexiones: %s]" % (
         self.name, self.countNeurons(), self.countConnections)
 
+    def updateStateToTrace(self):
+        for neu in self.neurons.values():
+            neu.updateStateToTrace()
+        for con in self.connections:
+            con.updateStateToTrace()
+
+    def graphVariableTraces(self,folder):
+        for neu in self.neurons.values():
+            neu.graphVariableTraces(folder)
+        for con in self.connections:
+            con.graphVariableTraces(folder)
 
 
-    def loadNeuron(self, nname):
-        if nname not in self.neurons:
-             n = neu.Neuron(nname)
-             n.initialize(G_Leak, V_Leak, Cm)
-             self.neurons[nname] = n
 
     def getNeuron(self, nname):
          return self.neurons[nname]
@@ -39,18 +48,28 @@ class NeuralNetwork:
     def getNeuronNames(self):
          return self.neurons.keys()
 
+
+    def getNeuronPotencialOfName(self,name):
+        return self.neurons[name].getPotencial()
+    def resetActivationTraces(self):
+        for neu in self.neurons.values():
+            neu.resetLastActivationTrace()
+
+    def recordActivationTraces(self):
+        for neu in self.neurons.values():
+            neu.recordActivationTrace()
+
+
+    def getConnections(self):
+        return self.connections
+
+
     def resetAllNeurons(self):
         for n in self.neurons.values():
             n.resetPotencial(V_Leak)
 
     def countNeurons(self):
         return len(self.neurons)
-
-    def loadConnection(self, conType, sourceName, targetName, weight):
-        srcNeu = self.neurons[sourceName]
-        tarNeu = self.neurons[targetName]
-        newCon = con.Connection(conType, srcNeu, tarNeu, weight, Sigmoid_sigma)
-        self.connections.append(newCon)
 
     def countConnections(self, type=None):
         count = 0
@@ -65,8 +84,6 @@ class NeuralNetwork:
     def doSimulationStep(self, delta):
         for neu in self.neurons.values():
             neu.computeVnext(delta, self.getDendriticConnectionsFor(neu))
-            #neu.useVnext()?????? me parece que este explota
-
 
 
     def getDendriticConnectionsFor(self,targetNeuron):
@@ -105,14 +122,23 @@ class NeuralNetwork:
     def setNeuronTestCmOfName(self,name,val):
         return self.neurons[name].setTestCm(val)
 
-
-    def getState(self):
-        st='-----------\n'
+    def writeToGraphs(self,folder):
+        times=[]
+        values=[]
         for neu in self.neurons.values():
-            st=st+str(neu)+'\n'
-        for con in self.connections:
-            st=st+str(con)
-        return st
+            values=neu.getLastActivaionTrace()
+            neu.resetLastActivationTrace()
+            times=[i for i in range(0, len(values))]
+            fig=plt.figure()
+            plt.plot(times, values, 'ro', label='voltage')
+            plt.ylabel('Voltages')
+            plt.xlabel('Episode step')
+            plt.legend()
+            plt.title('Neural Voltage')
+            fig.savefig( folder+'/'+neu.getName()+'.png', bbox_inches='tight')
+
+
+
 
     def getConnectionSize(self):
         return len(self.connections)
@@ -120,18 +146,6 @@ class NeuralNetwork:
     def getNeuronsSize(self):
         return len(self.neurons)
 
-
-    def commitNoise(self):
-        for neu in self.neurons.values():
-            neu.commitNoise()
-        for con in self.connections:
-            con.commitNoise()
-
-    def revertNoise(self):
-        for neu in self.neurons.values():
-            neu.revertNoise()
-        for con in self.connections:
-            con.revertNoise()
 
 
     def writeToFile(self,logfile):
@@ -142,15 +156,14 @@ class NeuralNetwork:
         for con in self.connections:
             logfile.write(str(con) + '\n')
 
-    def dumpNeuralNetwork(self,xmlNn):
-        xmlNn.set('name',self.name)
-        #xmlNeurons = ET.SubElement(xmlNn, 'Neurons')
-        #xmlConnections = ET.SubElement(xmlNn, 'Connections')
-        for neu in self.neurons.values():
-            neu.dumpNeuron(xmlNn)
-        for con in self.connections:
-            con.dumpConnection(xmlNn)
+    # def dumpNeuralNetwork(self,xmlNn):
+    #     xmlNn.set('name',self.name)
+    #     for neu in self.neurons.values():
+    #         neu.dumpNeuron(xmlNn)
+    #     for con in self.connections:
+    #         con.dumpConnection(xmlNn)
 
+    #needed for PyGAD
     def getIndividualForPYGAD(self):
         currList = []
         for neu in self.neurons.values():
@@ -161,6 +174,7 @@ class NeuralNetwork:
                 currList.append(nc)
         return currList
 
+    #needed for HyperOpt
     def getSpaceForHyperOpt(self):
         currDic={}
         varDic = {}
@@ -176,33 +190,40 @@ class NeuralNetwork:
         return currDic
 
 
+    def commitNoise(self):
+        for neu in self.neurons.values():
+            neu.commitNoise()
+        for con in self.connections:
+            con.commitNoise()
+
+    def revertNoise(self):
+        for neu in self.neurons.values():
+            neu.revertNoise()
+        for con in self.connections:
+            con.revertNoise()
 
     def isSameAs(self,neuralNetwork2):
-        sameNeurons=True
-        sameConnections=True
+        sameNeuronsList=[]
+        sameConnectionsList=[]
         for key in self.neurons:
-            sameNeurons=sameNeurons or (self.neurons[key]).isSameAs(neuralNetwork2.neurons[key])
+            same=(self.neurons[key]).isSameAs(neuralNetwork2.neurons[key])
+            if not same:
+                sameNeuronsList.append(self.neurons[key])
         for index  in range(0,len(self.connections)):
-            sameConnections = sameConnections or (self.connections[index]).isSameAs(neuralNetwork2.connections[index])
-        return [sameNeurons,sameConnections]
+            same=(self.connections[index]).isSameAs(neuralNetwork2.connections[index])
+            if not same:
+                sameConnectionsList.append(self.connections[index])
+        sameNeuronsList.append(sameConnectionsList)
+        return sameNeuronsList
 
-    def clone(self):
-        nnToRet=NeuralNetwork(self.name)
-        for key,val in self.neurons.items():
-            nnToRet.neurons[key]=(self.neurons[key]).clone()
-        for con in self.connections:
-            nnToRet.connections.append(con.clone())
-        return nnToRet
 
 
 def loadNeuralNetwork(xmlNn):
      nnToReturn = NeuralNetwork(xmlNn.attrib['name'])
-     #namesForRandomIndexes = []
      for child in xmlNn:
          if child.tag == 'neuron':
              n = neu.loadNeuron(child)
              nnToReturn.neurons[n.getName()] = n
-             #namesForRandomIndexes.append(n.getName())
          if child.tag == 'connection':
               c = con.loadConnection(child,nnToReturn)
               nnToReturn.connections.append(c)

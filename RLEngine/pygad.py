@@ -1001,7 +1001,7 @@ class GA:
 
             # If the callback_generation attribute is not None, then cal the callback function after the generation.
             if not (self.on_generation is None):
-                r = self.on_generation(self)
+                r = self.on_generation()
                 if type(r) is str and r.lower() == "stop":
                     # Before aborting the loop, save the fitness value of the best solution.
                     _, best_solution_fitness, _ = self.best_solution()

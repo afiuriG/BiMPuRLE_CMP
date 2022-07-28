@@ -27,8 +27,16 @@ class NeuralNetwork:
         return "[nombre: %s,  neuronas: %s,conexiones: %s]" % (
         self.name, self.countNeurons(), self.countConnections)
 
-
-
+    def updateStateToTrace(self):
+        for neu in self.neurons.values():
+            neu.updateStateToTrace()
+        for con in self.connections:
+            con.updateStateToTrace()
+    def graphVariableTraces(self,folder):
+        for neu in self.neurons.values():
+            neu.graphVariableTraces(folder)
+        for con in self.connections:
+            con.graphVariableTraces(folder)
     def getNeuron(self, nname):
          return self.neurons[nname]
     def getNeurons(self):
@@ -66,6 +74,8 @@ class NeuralNetwork:
 
     def getConnectionIdx(self,idx):
         return self.connections[idx]
+    def getConnections(self):
+        return self.connections
 
 
     def getConnectionTestWeightOfIdx(self,idx):

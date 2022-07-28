@@ -2,6 +2,7 @@
 import math
 from hyperopt import hp
 import Models.Izhikevich.Connection as conn
+import Utils.GraphUtils as gu
 
 
 #k1 = 0.04
@@ -30,6 +31,7 @@ class Neuron:
         self.E_exit = 0
         self.fired = False
         self.lastActivationTrace=[]
+        self.stateToTrace = {'A': [], 'B': [], 'C': [], 'D': []}
 
     def __str__(self):
         return "[%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s]\n" % (
@@ -65,6 +67,13 @@ class Neuron:
         return self.lastActivationTrace
     def recordActivationTrace(self):
         self.lastActivationTrace.append(self.potencialV)
+
+    def updateStateToTrace(self):
+        self.stateToTrace['A'].append(self.testParamA)
+        self.stateToTrace['B'].append(self.testParamB)
+        self.stateToTrace['C'].append(self.testParamC)
+        self.stateToTrace['D'].append(self.testParamD)
+        #print('passed by the conection's updateStateToTrace with values for vleak %s'%(self.stateToTrace['Vleak']))
 
 #state seters and geters
     def setPotencial(self, pot):
@@ -167,11 +176,9 @@ class Neuron:
         if (v_en_t_mas_tau)<-100:
             v_en_t_mas_tau=-100
         if(v_en_t_mas_tau)>V_peak:
-            self.fired=True
             tau_peack=(V_peak-v)*tau/(v_en_t_mas_tau-v)
             u_en_t_mas_tau = u + tau_peack * (self.testParamA * (self.testParamB * v - u))
             v_en_t_mas_tau = self.testParamC
-            #v_en_t_mas_tau = -20
         else:
             u_en_t_mas_tau = u + tau * (self.testParamA*(self.testParamB*v-u))
         self.potencialV = v_en_t_mas_tau
@@ -187,6 +194,8 @@ class Neuron:
             value = 1 / (1+math.exp(-sigma*(sourcePot-Sigmoid_mu)))
         return value
 
+    def graphVariableTraces(self,folder):
+        gu.graphVarTraces(self.stateToTrace,folder,self.neuronName)
 
 #dismissed
     def isSameAs(self,neu2):

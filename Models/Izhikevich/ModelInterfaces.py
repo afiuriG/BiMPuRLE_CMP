@@ -33,6 +33,10 @@ class BinaryInterface:
 
     def getName(self):
         return  self.name
+    def getPosNeu(self):
+        return  self.positiveNeuron
+    def getNegNeu(self):
+        return  self.negativeNeuron
 
     def setMaxValue(self,max):
         self.maxValue = max

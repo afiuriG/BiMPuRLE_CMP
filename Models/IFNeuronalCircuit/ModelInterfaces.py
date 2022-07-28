@@ -1,5 +1,10 @@
 import xml.etree.ElementTree as ET
 import numpy as np
+#import np.random as rng
+
+
+distortions={}
+variances={}
 
 class BinaryInterface:
 
@@ -28,6 +33,11 @@ class BinaryInterface:
     def getName(self):
         return  self.name
 
+    def getPosNeu(self):
+        return  self.positiveNeuron
+    def getNegNeu(self):
+        return  self.negativeNeuron
+
     def setMaxValue(self,max):
         self.maxValue = max
 
@@ -38,7 +48,7 @@ class BinaryInterface:
     def setValue(self, val):
         self.value = val
 
-    #llamado sync en el codigo del autor
+    # Was named sync in the original paper (for I&F)
     def feedNN(self):
         if self.type == 'IN':
             if self.value>=0:
@@ -60,8 +70,10 @@ class BinaryInterface:
         if self.type == 'OUT':
             negPot = self.negativeNeuron.getPotencial()
             posPot = self.positiveNeuron.getPotencial()
-            retVal = self.bounded_affine(self.minPotencial,0,self.maxPotencial,self.maxValue,posPot)
-            retVal = retVal - self.bounded_affine(self.minPotencial,0,self.maxPotencial,-self.minValue,negPot)
+            retVal1 = self.bounded_affine(self.minPotencial,0,self.maxPotencial,self.maxValue,posPot)
+            retVal2 = self.bounded_affine(self.minPotencial,0,self.maxPotencial,-self.minValue,negPot)
+            retVal = retVal1 - retVal2
+            #print('retValPos:%s,retValNeg:%s=%s, pot[%s,%s]' % (retVal1, retVal2, retVal1 - retVal2, posPot, negPot))
             return retVal
 
     def bounded_affine (self,xmin,ymin,xmax,ymax,x):
@@ -75,26 +87,14 @@ class BinaryInterface:
         return y
 
 
-    def dumpInterface(self,xmlInterfaces):
-        xmlInterface = ET.SubElement(xmlInterfaces, 'interface')
-        xmlInterface.set('name',self.name)
-        xmlInterface.set('maxPotencial', str(self.maxPotencial))
-        xmlInterface.set('minPotencial', str(self.minPotencial))
-        xmlInterface.set('maxValue', str(self.maxValue))
-        xmlInterface.set('minValue', str(self.minValue))
-        xmlInterface.set('value', str(self.value))
-        xmlInterface.set('positiveNeuron', self.positiveNeuron.getName())
-        xmlInterface.set('negativeNeuron', self.negativeNeuron.getName())
-        xmlInterface.set('type', self.type)
 
-    def clone(self):
-        toRet=BinaryInterface(self.name,self.positiveNeuron,self.negativeNeuron,self.type)
-        toRet.maxPotencial=self.maxPotencial
-        toRet.minPotencial=self.minPotencial
-        toRet.minValue=self.minValue
-        toRet.maxValue=self.maxValue
-        toRet.value=self.value
-        return toRet
+    def isSameAs(self,interface2):
+        isSame=True
+        isSame=isSame and (self.value==interface2.value)
+        isSame=isSame and (self.minValue==interface2.minValue)
+        isSame=isSame and (self.maxValue==interface2.maxValue)
+        return isSame
+
 
 
 def loadConnection(xmlMI,nn):
@@ -109,12 +109,6 @@ def loadConnection(xmlMI,nn):
         interfacesToReturn[miToReturn.name]=miToReturn
     return interfacesToReturn
 
-def randonizeModel(model):
-     model.addNoise('Weight', 0.5, 26)
-     model.addNoise('Vleak', 10, 11)
-     model.addNoise('Gleak', 0.2, 11)
-     model.addNoise('Sigma', 0.2, 26)
-     model.addNoise('Cm', 0.1, 11)
 
 #interfaces for openGym Environment
 
@@ -130,6 +124,7 @@ def modActionToEnvAction(modAction):
     actions = np.zeros(1)
     actions[0] = modAction
     return actions
+
 #interfaces for HyperOpt
 def getSpaceForHyperOpt(model):
     return model.neuralnetwork.getSpaceForHyperOpt()
@@ -138,50 +133,19 @@ def getSpaceForHyperOpt(model):
 def putVariablesFromHyperOpt(model,vars):
     for neuName in model.neuralnetwork.getNeuronNames():
         deltaGleak=vars[neuName+'_tgl']
-            #newValue = self.neuralnetwork.getNeuronTestGleakOfName(neuName) + deltaGleak
-            #if newValue < 0.05:
-            #    newValue = 0.05
-            #elif newValue > 5.0:
-            #    newValue = 5.0
-            #self.neuralnetwork.setNeuronTestGleakOfName(neuName, newValue)
         model.neuralnetwork.setNeuronTestGleakOfName(neuName, deltaGleak)
         deltaVleak=vars[neuName+'_tvl']
-            #newValue = self.neuralnetwork.getNeuronTestVleakOfName(neuName) + deltaVleak
-            #if newValue < -90:
-            #    newValue = -90
-            #elif newValue > 0:
-            #    newValue = 0
-            #self.neuralnetwork.setNeuronTestVleakOfName(neuName, newValue)
         model.neuralnetwork.setNeuronTestVleakOfName(neuName, deltaVleak)
         deltaCm=vars[neuName+'_tcm']
-            #newValue = self.neuralnetwork.getNeuronTestCmOfName(neuName) + deltaCm
-            #if newValue < 0.001:
-            #    newValue = 0.001
-            #elif newValue > 1.0:
-            #    newValue = 1.0
-            #self.neuralnetwork.setNeuronTestCmOfName(neuName, newValue)
         model.neuralnetwork.setNeuronTestCmOfName(neuName, deltaCm)
     for idx in range(0,len(model.neuralnetwork.connections)):
         deltaWeight=vars['con_'+str(idx)+'_w']
-            #newValue = self.neuralnetwork.getConnectionTestWeightOfIdx(idx) + deltaWeight
-            #if newValue < 0:
-            #    newValue = 0
-            #elif newValue > 3.0:
-            #    newValue = 3.0
-            #self.neuralnetwork.setConnectionTestWeightOfIdx(idx, newValue)
         model.neuralnetwork.setConnectionTestWeightOfIdx(idx, deltaWeight)
         deltaSigma=vars['con_'+str(idx)+'_s']
-            #newValue = self.neuralnetwork.getConnectionTestSigmaOfIdx(idx) + deltaSigma
-            #if newValue < 0.05:
-            #    newValue = 0.05
-            #elif newValue > 0.5:
-            #    newValue = 0.5
-            #self.neuralnetwork.setConnectionTestSigmaOfIdx(idx, newValue)
         model.neuralnetwork.setConnectionTestSigmaOfIdx(idx, deltaSigma)
 
 
 #Interfaces for PyGad
-
 
 
 def getNumGenes():
@@ -259,4 +223,102 @@ def putIndividualFromPYGAD(model,indiv):
                 sigma=indiv[i]
                 model.neuralnetwork.setConnectionTestSigmaOfIdx(index-11, sigma)
                 index=index+1
+
+def randonizeModel(model):
+    model.addNoise('Weight', 0.5, 26)
+    model.addNoise('Vleak', 10, 11)
+    model.addNoise('Gleak', 0.2, 11)
+    model.addNoise('Sigma', 0.2, 26)
+    model.addNoise('Cm', 0.1, 11)
+
+#Interfaces for Random Seek
+
+
+def setInitialDistortions():
+        global distortions
+        distortions['weight']=15
+        distortions['vleak'] = 8
+        distortions['gleak'] = 8
+        distortions['sigma'] = 10
+        distortions['cm'] = 10
+
+def setInitialVariance():
+    # if needed connections and neurons analize proper values for params a,b,c,d
+        global variances
+        variances['weight']=0.5
+        variances['vleak'] = 8
+        variances['gleak'] = 0.2
+        variances['sigma'] = 0.2
+        variances['cm'] = 0.1
+
+def setBaseDistortions():
+    #if needed connections and neurons analize proper values for params a,b,c,d
+    global distortions
+    distortions['weight']=6
+    distortions['vleak'] = 5
+    distortions['gleak'] = 4
+    distortions['sigma'] = 5
+    distortions['cm'] = 4
+
+
+#def setStepDistortions():
+    # global distortions
+    # distortions['weight']=np.random.randint(6, distortions['weight']+1)
+    # distortions['vleak'] = np.random.randint(4, distortions['vleak']+1)
+    # distortions['gleak'] = np.random.randint(4, distortions['gleak']+1)
+    # distortions['sigma'] = np.random.randint(5, distortions['sigma']+1)
+    # distortions['cm'] = np.random.randint(4, distortions['cm']+1)
+    #print('dummy')
+
+def setStepVariance():
+        global variances
+        variances['weight']=np.random.uniform(0.01, 0.8)
+        variances['vleak'] =  np.random.uniform(0.1, 3)
+        variances['gleak']  = np.random.uniform(0.05, 0.8)
+        variances['sigma'] = np.random.uniform(0.01, 0.08)
+        variances['cm'] = np.random.uniform(0.01, 0.3)
+
+def setDecresedDistortions():
+    global distortions
+    if (distortions['weight'] > 4):
+        distortions['weight'] -= 1
+    if (distortions['sigma'] > 4):
+        distortions['sigma'] -= 1
+    if (distortions['vleak'] > 2):
+        distortions['vleak'] -= 1
+    if (distortions['gleak'] > 2):
+        distortions['gleak'] -= 1
+    if (distortions['cm'] > 2):
+        distortions['cm'] -= 1
+
+def setIncresedDistortions():
+    global distortions
+    if (distortions['weight'] < 13):
+        distortions['weight'] = distortions['weight'] + 1
+    if (distortions['sigma'] < 13):
+        distortions['sigma'] += 1
+    if (distortions['vleak'] < 6):
+        distortions['vleak'] += 1
+    if (distortions['gleak'] < 6):
+        distortions['gleak'] += 1
+    if (distortions['cm'] < 6):
+        distortions['cm'] += 1
+
+
+
+def randonize(model):
+    global distortions
+    global variances
+    model.addNoise('Weight', variances['weight'], distortions['weight'])
+    model.addNoise('Vleak', variances['vleak'], distortions['vleak'])
+    model.addNoise('Gleak', variances['gleak'], distortions['gleak'])
+    model.addNoise('Sigma', variances['sigma'], distortions['sigma'])
+    model.addNoise('Cm', variances['cm'], distortions['cm'])
+
+def randozieAll(model):
+        model.addNoise('Weight', 0.5, 26)
+        model.addNoise('Vleak', 10, 11)
+        model.addNoise('Gleak', 0.2, 11)
+        model.addNoise('Sigma', 0.2, 26)
+        model.addNoise('Cm', 0.1, 11)
 

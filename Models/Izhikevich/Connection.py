@@ -1,8 +1,6 @@
 import enum
-import xml.etree.ElementTree as ET
-import random
-import numpy as np
 from hyperopt import hp
+import Utils.GraphUtils as gu
 
 class Connection:
 
@@ -14,6 +12,7 @@ class Connection:
         self.connSigma = sigma
         self.testWeight = weight
         self.testSigma = sigma
+        self.stateToTrace = {'Weight': [], 'Sigma': []}
 
     def __str__(self):
         return "<%s,%s,%s,%s,%s,%s>\n" % (self.connSource.getName(), self.connTarget.getName(), self.testWeight, self.testSigma,self.connWeight, self.connSigma)
@@ -52,10 +51,21 @@ class Connection:
 
     def getSource(self):
         return self.connSource
+    def setSource(self,src):
+        self.connSource=src
 
     def getTarget(self):
         return self.connTarget
+    def setTarget(self,tar):
+        self.connTarget=tar
 
+    def updateStateToTrace(self):
+        self.stateToTrace['Weight'].append(self.testWeight)
+        self.stateToTrace['Sigma'].append(self.testSigma)
+        #print('passed by the conection's updateStateToTrace with values for weight %s' %(self.stateToTrace['Weight']))
+
+    def graphVariableTraces(self,folder):
+        gu.graphVarTraces(self.stateToTrace,folder,self.connSource.getName()+'/'+self.connTarget.getName())
 
 
     def isSameAs(self,con2):

@@ -9,6 +9,7 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import matplotlib.colors as mplcol
 from Utils import GraphUtils as gut
+from Utils import Environment as eut
 import pickle
 
 np.random.seed(423)
@@ -29,13 +30,17 @@ class Model:
 
     def setGenerationGraphModeFolderOn(self,folder):
         self.generationGraphModeFolder=folder
-        #same ammount of steps so the generation graph is self reseting
+        #same ammount of simulation steps so the generation graph is self reseting
         self.generationGraphModeCounter=5
 
     def setGenerationGraphModeFolderOff(self):
         self.generationGraphModeFolder= ''
 
+    def updateStateToTrace(self):
+        return self.neuralnetwork.updateStateToTrace()
 
+    def graphVariableTraces(self,folder):
+        self.neuralnetwork.graphVariableTraces(folder)
 
     def load(self,fromFile=''):
         if fromFile=='':
@@ -63,6 +68,8 @@ class Model:
 
     def getInterface(self,name):
         return self.interfaces[name]
+    def getInterfaces(self):
+        return self.interfaces.values()
 
     def getNeuron(self,name):
         return self.neuralnetwork.getNeuron(name)
@@ -78,7 +85,18 @@ class Model:
         for intf in self.interfaces.values():
             intf.reset()
 
-
+    def runPulse(self):
+        deltaT=0.1
+        simmulationSteps = 5
+        for step in range(0,simmulationSteps):
+            randomX,randomV=eut.getRandomObservation("MouCarCon")
+            self.interfaces['IN1'].setValue(randomX)
+            self.interfaces['IN2'].setValue(randomV)
+            self.interfaces['IN1'].feedNN()
+            self.interfaces['IN2'].feedNN()
+            self.neuralnetwork.doSimulationStep(deltaT)
+            ret = self.interfaces['OUT1'].getFeedBackNN()
+        #print("x:%s, v:%s, a:%s"%(randomX,randomV,ret))
 
 
 # The name was taken from the original paper (for I&F) but I think some thing like runConnectome
@@ -87,7 +105,7 @@ class Model:
     def Update(self,observations,mode=None,doLog=False):
         deltaT=0.1
         simmulationSteps = 5
-        self.interfaces['OUT1'].resetFired()
+        #self.interfaces['OUT1'].resetFired()
         if doLog:
             networkLog = open('log/oneEpisodeModel.log', 'a')
             networkLog.write("----Update(%s,%s,%s)" % (observations,deltaT,simmulationSteps) + '\n')
