@@ -12,6 +12,7 @@ import Utils.GraphUtils as gra
 import Utils.Shuffling as shuf
 from PIL import Image
 import csv
+import Utils.Reporting as rep
 import collections
 
 
@@ -254,181 +255,24 @@ class RLEngine:
             self.model.runPulse()
 
 
-    def graphComparisson(self,mode):
-        if mode=='local':
-            self.graphComparissonLocal()
-        else:
-            self.graphComparissonDock()
+    def graphComparisson(self):
+        #self.rootpath=folder
 
-    def graphComparissonDock(self):
-        scenariosSufix=['11a','11b','11c','11d','11e','52a','52b','52c','52d','52e','55a','55b','55c','55d','55e','105a','105b','105c','105d','105e','1010a','1010b','1010c','1010d','1010e']
-        configsLab=[]
-        rewMeans=[]
-        rewSigmas=[]
-        stepMeans=[]
-        stepSigmas=[]
-        stepMins=[]
-        config=self.getConfig()
-        modelAb=config["modelAbrev"]
-        optimAb=config["optimizerAbrev"]
-        fileNamePrefix='gatheredStats'+modelAb+optimAb
-        toProcess=self.getDatasFromGatheredStatsFile(self.rootpath,fileNamePrefix)
+        if not os.path.exists(self.rootpath + '../rewardBasedGraphs'):
+            os.makedirs(self.rootpath + '../rewardBasedGraphs')
+        if not os.path.exists(self.rootpath + '../stepBasedGraphs'):
+            os.makedirs(self.rootpath + '../stepBasedGraphs')
+        if not os.path.exists(self.rootpath + '../timeBasedGraphs'):
+            os.makedirs(self.rootpath + '../timeBasedGraphs')
+        if not os.path.exists(self.rootpath + '../modelComparissonGraphs'):
+            os.makedirs(self.rootpath + '../modelComparissonGraphs')
 
 
 
-        gra.graphComparissonRew(configsLab,rewMeans,rewSigmas,self.rootpath)
-        gra.graphComparissonSteps(configsLab,stepMeans,stepSigmas,stepMins,self.rootpath)
-        #gra.graphComparissonTrainTime(configsLab,rewMeans,rewSigmas,self.rootpath)
-        #gra.graphComparissonTestTime(configsLab,stepMeans,stepSigmas,stepMins,self.rootpath)
-        #gra.graphComparissonALL(configsLab,stepMeans,stepSigmas,stepMins,self.rootpath)
+        rep.generateAllGraphs(self.rootpath+'../')
 
 
 
-    def graphComparissonDockOld(self):
-        scenariosSufix=['11a','11b','11c','11d','11e','52a','52b','52c','52d','52e','55a','55b','55c','55d','55e','105a','105b','105c','105d','105e','1010a','1010b','1010c','1010d','1010e']
-        files = os.listdir(self.rootpath)
-        configsLab=[]
-        stepMeans=[]
-        stepSigmas=[]
-        stepMins=[]
-        rewTrain=[]
-        rewMeans=[]
-        rewSigmas=[]
-        config=self.getConfig()
-        modelAb=config["modelAbrev"]
-        optimAb=config["optimizerAbrev"]
-        if modelAb=='IandF' :
-             modelLabel='IF'
-        else:
-             modelLabel=modelAb
-        if optimAb=='BO' :
-             optimconfigs=['500','1000','1500','2000']
-        elif optimAb=='RS' :
-             optimconfigs = ['2000','5000','10000','25000']
-        elif optimAb=='GA' :
-             optimconfigs = ['20', '50', '80', '110']
-        else:
-             optimconfigs = []
-        fileNamePrefix='timeResults'+modelLabel+optimAb
-        timeResultsFileNames=[]
-        for oc in optimconfigs:
-            timeResultsFileNames.append(fileNamePrefix+oc)
-        toProcess=self.getDatasFromTimeResultsFile(self.rootpath,timeResultsFileNames)
-        #toProcessOrdered=collections.OrderedDict(sorted(toProcess.items()))
-        for opConf in optimconfigs:
-            for i in range(0,25):
-                key=modelAb+optimAb+opConf+scenariosSufix[i]
-                folder=str(toProcess[key]).partition('/')[2]
-                if folder=='0.0':
-                    rewTrain.append(0.0)
-                    rewMeans.append(0.0)
-                    rewSigmas.append(0.0)
-                    stepMeans.append(0.0)
-                    stepSigmas.append(0.0)
-                    stepMins.append(0.0)
-                else:
-                    datas = self.getDatasFromReplayFile(self.rootpath + folder + '/replay.txt')
-                    rewTrain.append(float(str(toProcess[key]).partition('/')[2]))
-                    rewMeans.append(float(datas['rew_mean'].partition('[')[2]))
-                    rewSigmas.append(float(datas['rew_sigma']))
-                    stepMeans.append(float(datas['steps_mean']))
-                    stepSigmas.append(float(datas['steps_sigma']))
-                    stepMins.append(float(datas['steps_min']))
-                configsLab.append(opConf+scenariosSufix[i])
-                #print(key+':'+str(toProcess[key]).partition('/')[2])
-        gra.graphComparissonRew(configsLab,rewMeans,rewSigmas,self.rootpath)
-        gra.graphComparissonSteps(configsLab,stepMeans,stepSigmas,stepMins,self.rootpath)
-        #gra.graphComparissonTrainTime(configsLab,rewMeans,rewSigmas,self.rootpath)
-        #gra.graphComparissonTestTime(configsLab,stepMeans,stepSigmas,stepMins,self.rootpath)
-        #gra.graphComparissonALL(configsLab,stepMeans,stepSigmas,stepMins,self.rootpath)
-
-
-
-
-
-
-    #need check to know if is still working
-    def graphComparissonLocal(self):
-        self.rootpath = self.rootpath + '../../../../Presentation/Reportes/'
-        files=os.listdir(self.rootpath)
-        configs=[]
-        rewMeans=[]
-        rewSigmas=[]
-        stepMeans=[]
-        stepSigmas=[]
-        mins=[]
-        lab=[]
-        for f in files:
-            if f.find('NOPROC')==-1:
-               underscoreidx=f.find('_')
-               toretu=f[underscoreidx+1:]
-               configs.append(toretu)
-               print('Process: '+toretu)
-               datas=self.getDatasFromReplayFile(self.rootpath+f+'/replay.txt')
-               rewMeans.append(float(datas['rew_mean']))
-               rewSigmas.append(float(datas['rew_sigma']))
-               stepMeans.append(float(datas['steps_mean']))
-               stepSigmas.append(float(datas['steps_sigma']))
-               mins.append(float(datas['steps_min']))
-               #lab.append(f)
-            else:
-               print('Will not be processed: ' + f)
-        gra.graphComparissonRew(configs,rewMeans,rewSigmas,self.rootpath)
-        gra.graphComparissonSteps(configs,stepMeans,stepSigmas,mins,self.rootpath)
-        #gra.graphComparissonStepsMin()
-
-    def getDatasFromReplayFile(self,file):
-        try:
-            with open(file) as csv_file:
-                toRet=None
-                csv_reader = csv.reader(csv_file, delimiter=',',)
-                for row in csv_reader:
-                    toRet={'rew_mean':row[7],'rew_sigma':row[9],'steps_mean':row[10],'steps_sigma':row[12],'steps_min':row[13]}
-                csv_file.close()
-        except:
-            toRet = {'rew_mean': 'x[0.0', 'rew_sigma': '0.0', 'steps_mean': '0.0', 'steps_sigma': '0.0',
-                     'steps_min': '0.0'}
-        return toRet
-
-    def getDatasFromGatheredStatsFile(self,rootpath,f):
-        toRet = {}
-        toRetList=[]
-        gatheredFile=rootpath+'../STATS/'+f
-        with open(gatheredFile) as csv_file:
-                csv_reader = csv.reader(csv_file, delimiter=',',)
-                for row in csv_reader:
-                    scenario=row[0]
-                    reward=round(float(row[1]),3)
-                    userSeconds=self.getSecondsFromStatsFileFormat(row[2])
-                    systemSeconds=self.getSecondsFromStatsFileFormat(row[3])
-                    systemTrainTime=round(userSeconds+systemSeconds,3)
-                    wallTrainTime=self.getSecondsFromStatsFileFormat(row[4])
-                    minSteps=float(row[5])
-                    mediaSteps=float(row[6])
-                    sigmaSteps=float(row[7])
-                    meanRew=row[8]
-                    sigmaRew=row[9]
-                    userSeconds=self.getSecondsFromStatsFileFormat(row[10])
-                    systemSeconds=self.getSecondsFromStatsFileFormat(row[11])
-                    systemReplayTime=round(userSeconds+systemSeconds,3)
-                    wallReplayTime=self.getSecondsFromStatsFileFormat(row[12])
-                    toRetList.append({'scenario':scenario,'reward':reward,
-                                      'systemTrainTime':systemTrainTime,'wallTrainTime':wallTrainTime,
-                                      'minSteps':minSteps,'mediaSteps':mediaSteps,'sigmaSteps':sigmaSteps,
-                                      'meanRew':meanRew,'sigmaRew':sigmaRew,'systemReplayTime':systemReplayTime,
-                                      'wallReplayTime':wallReplayTime})
-                    # if not('-' in row[4] or '0.0' in row[4]):
-                    #     toRet[row[0]]=row[4]
-                    # else:
-                    #     toRet[row[0]] = 'IandF_MouCarCon_BO/0.0'
-                csv_file.close()
-        return toRet
-
-    def getSecondsFromStatsFileFormat(self,timeStr):
-        mins=timeStr.split('m')[0]
-        seconds=(timeStr.split('m')[1])[0:-1]
-        td=timedelta(minutes=float(mins),seconds=float(seconds))
-        return td.total_seconds()
 
 
 
@@ -455,8 +299,6 @@ class RLEngine:
             self.rootpath=self.rootpath+folder
             os.system('rm -rf '+self.rootpath)
             print('deleted: '+self.rootpath)
-
-
 
     def video(self,folder):
         self.rootpath=folder
@@ -610,6 +452,8 @@ class RLEngine:
 def createEngine(path,mod,env,opt,batch,worst,steps,gamma):
     if (env=='MouCarCon'):
         environment= gym.make("MountainCarContinuous-v0")
+    elif (env=='CarPole') :
+        environment= gym.make("CartPole-v1")
     else:
         print ('The environment is wrong.')
     if (mod=='IandF'):
@@ -708,6 +552,7 @@ def createFiuriModel():
 
 def run():
     global rootpath
+    global folderParam
     rootpath = ''
     missing=[]
     rootpath = rootpath + 'uid.' + uidParam + '/'
@@ -727,12 +572,12 @@ def run():
     if(len(missing)==0):
         if not os.path.exists(rootpath):
             os.makedirs(rootpath)
-            os.makedirs(rootpath+'NullHypotesis')
+            os.makedirs(rootpath+'shuffleArch')
             createResultsCsv(rootpath)
-            createResultsCsv(rootpath+'NullHypotesis')
+            createResultsCsv(rootpath+'shuffleArch')
         gotCommand=False
         if (commandParam == 'optimize'):
-            print('optimizar con rootpath: '+rootpath)
+            print('optimize with rootpath: '+rootpath)
             #will be used only if opt=IGA
             global sourceFolderIGA
             sourceFolderIGA=folderParam
@@ -740,13 +585,13 @@ def run():
             engine.optimize()
             gotCommand=True
         if (commandParam == 'train'):
-            print('train con rootpath: '+rootpath)
+            print('train with rootpath: '+rootpath)
             engine=createEngine(rootpath,modelParam,environParam,optimParam,batchParam,worstParam,stepsParam,gammaParam)
             engine.train()
             gotCommand=True
-        if (commandParam == 'optimizeNull'):
-            rootpath=rootpath+'NullHypotesis/'
-            print('optimize con null hypotesis: ' + rootpath )
+        if (commandParam == 'shuffleArch'):
+            rootpath=rootpath+'shuffleArch/'
+            print('optimize with shuffling: ' + rootpath )
             engine = createEngine(rootpath, modelParam, environParam, optimParam, batchParam, worstParam, stepsParam,gammaParam)
             #gu.graphSnapshot('IZ',engine.model,0,True)
             shuf.shuffle(engine.model)
@@ -768,6 +613,9 @@ def run():
             engine.optimize(mode='timed')
             gotCommand = True
         if (commandParam == 'debug'):
+            if('shuffleArch' in folderParam):
+                rootpath=rootpath+'shuffleArch/'
+                folderParam=folderParam.replace("shuffleArch/","")
             print('debug con rootpath: ' + rootpath)
             engine=createEngine(rootpath, modelParam, environParam, optimParam, batchParam, worstParam, stepsParam,gammaParam)
             engine.debug(folderParam)
@@ -779,13 +627,16 @@ def run():
             engine.optimize(mode='graphSearch')
             gotCommand = True
         if (commandParam == 'replay'):
+            if('shuffleArch' in folderParam):
+                rootpath=rootpath+'shuffleArch/'
+                folderParam=folderParam.replace("shuffleArch/","")
             print('replay con rootpath: ' +rootpath+folderParam)
             engine=createEngine(rootpath,modelParam, environParam, optimParam, batchParam,worstParam, stepsParam,gammaParam)
             engine.replay(folderParam)
             gotCommand = True
             #don't know if is still used...
         if (commandParam == 'replayNull'):
-            print('replay con null hypotesis on params values: ' + rootpath + 'NullHypotesis')
+            print('replay with null hypotesis on params values: ' + rootpath + 'NullHypotesis')
             engine = createEngine(rootpath, modelParam, environParam, optimParam, batchParam, worstParam, stepsParam,gammaParam)
             engine.replayFolder('NullHypotesis')
             gotCommand = True
@@ -815,7 +666,7 @@ def run():
             print('graph configurations comparison: ' + rootpath + folderParam)
             engine = createEngine(rootpath, modelParam, environParam, optimParam, batchParam, worstParam, stepsParam,
                                   gammaParam)
-            engine.graphComparisson('docker')
+            engine.graphComparisson()
             gotCommand = True
         if (commandParam == 'rmFolder'):
             print('remove directory: ' + rootpath + folderParam)
@@ -891,3 +742,5 @@ if __name__ == "__main__":
 
     #--mod IZH --env MouCarCon --opt BO --cmd touch --folder 95.53057470849589 --steps 1000 --batc 5 --worst 5 --gamma 1.0
     #--mod IZH --env MouCarCon --opt RS --cmd replay --folder NullHypotesis/96.68020310445371  --steps 5 --batch 1 --worst 1 --gamma 1.0
+
+    #--mod FIU --env MouCarCon --opt RS --cmd graphComparisson --folder all  --steps 1000 --batch 1 --worst 1 --gamma 1.0

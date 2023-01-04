@@ -1,3 +1,5 @@
+#from turtle import color
+
 import matplotlib.cm as cm
 import matplotlib.pyplot
 import networkx as nx
@@ -15,7 +17,7 @@ import Models.Fiuri.Neuron as neuFI
 import numpy as np
 from matplotlib.lines import Line2D
 from matplotlib.patches import Arrow,Circle,Rectangle
-
+import matplotlib.lines as mlines
 
 
 #For TW circuit
@@ -28,7 +30,7 @@ def getPotencialNormalizedForColor(version,pot):
         norm = mplcol.Normalize(vmin=-90.0, vmax=-10.0)
         return norm(pot)
     elif version == 'FI':
-        norm = mplcol.Normalize(vmin=-20.0, vmax=-20.0)
+        norm = mplcol.Normalize(vmin=-10.0, vmax=10.0)
         return norm(pot)
     elif version=='HA':
         value=0
@@ -279,8 +281,8 @@ def graphSnapshot(version,model,index ,extendedLabels=False):
     # nx.draw_networkx_labels(G, pos=allPositions)
     # nx.relabel_nodes(G, nodeLabels)
 # Modificado solo para debug, sacarlo !
-    fig.savefig('/tmp/graph%s.png' % (index), bbox_inches='tight')
-    #fig.savefig(model.generationGraphModeFolder + '/graph%s.png'%(index ), bbox_inches='tight')
+    #fig.savefig('/tmp/graph%s.png' % (index), bbox_inches='tight')
+    fig.savefig(model.generationGraphModeFolder + '/graph%s.png'%(index ), bbox_inches='tight')
     # plt.show()
 
 def graphReplayStepsHist(optimizer, model, results,folder):
@@ -386,19 +388,53 @@ def graphVarTraces(trace,folder,who):
     print (folder)
     print (trace)
 
-
-def graphComparissonRew (xs,ys,err,folder):
-
-    fig, ax = plt.subplots()
-    plt.title('Configuration comparisson')
+def graphConfigurationComparisson (xs,referencelabels,ylabel,modelName,yparams,mode,version,titLabel):
+    plt.figure()
+    plt.title('Configuration comparisson for model: %s based on %s' %(modelName,titLabel))
     plt.xlabel('Configuration')
-    plt.ylabel('Reward')
+    plt.ylabel(ylabel)
+    plt.xticks(fontsize=9)
+    plt.xticks(rotation=90)
+    plt.axvline(x=4.5)
+    plt.axvline(x=9.5)
+    plt.axvline(x=14.5)
+    plt.axvline(x=19.5)
+    #plt.tick_params(axis='x', width=12)
+    #plt.tick_params(axis='x',colors='red')
+    handles = [Rectangle((0,0),1,1,color='red',ec="k"),Rectangle((0,0),1,1,color='green',ec="k"),Rectangle((0,0),1,1,color='blue',ec="k")]
+    labels = referencelabels
+    if mode=='replay':
+        if version=='reward':
+            plt.axhline(y=91.5, linewidth=3, color='orange', linestyle='dotted')
+        elif version == 'step':
+            plt.axhline(y=200, linewidth=3, color='orange', linestyle='dotted')
+        plt.errorbar(xs, yparams[0], yparams[1], fmt='o', linewidth=2, capsize=6 ,color='red')
+        plt.errorbar(xs, yparams[2], yparams[3], fmt='o', linewidth=2, capsize=6 ,color='green')
+        plt.errorbar(xs, yparams[4], yparams[5], fmt='o', linewidth=2, capsize=6 ,color='blue')
 
-    ax.errorbar(xs, ys, err, fmt='o', linewidth=2, capsize=6 ,color='green')
+    elif mode== 'train'  or mode== 'min':
+        if version=='step':
+            plt.axhline(y=150, linewidth=3, color='orange', linestyle='dotted')
+        elif version=='reward':
+            plt.axhline(y=91.5, linewidth=3, color='orange', linestyle='dotted')
+        plt.scatter(xs,yparams[0],marker='x',color='red')
+        plt.scatter(xs,yparams[1],marker='x',color='green')
+        plt.scatter(xs,yparams[2],marker='x',color='blue')
+    elif mode=='replaytime':
+        plt.scatter(xs,yparams[0],marker='x',color='red')
+        plt.scatter(xs,yparams[2],marker='x',color='green')
+        plt.scatter(xs,yparams[4],marker='x',color='blue')
+    elif mode == 'trainingtime':
+        plt.scatter(xs,yparams[1],marker='x',color='red')
+        plt.scatter(xs,yparams[3],marker='x',color='green')
+        plt.scatter(xs,yparams[5],marker='x',color='blue')
 
-    plt.savefig(folder+ 'rewComparisson.png', bbox_inches='tight')
-    plt.show()
-    #
+
+    plt.legend(handles,labels,loc='lower right')
+    plt.savefig('./uid.0/%sBasedGraphs/%sComparisson%s%s.png' %(version,version,modelName,mode), bbox_inches='tight')
+    #plt.show()
+
+
 def cm_to_inch(value):
     return value/2.54
 
@@ -421,4 +457,86 @@ def  graphComparissonSteps(xs,ys,err,mins,folder):
     plt.savefig(folder+ '/stepsComparisson.png', bbox_inches='tight')
     plt.show()
 
+def graphPulseComparisson(xs,ys,linelab):
+    plt.figure()
+    plt.title('Time comparisson for 1 million of pulses')
+    plt.xlabel('Dynamic model')
+    plt.ylabel('Time(s)')
+    plt.xticks(fontsize=9)
+    plt.xticks(rotation=90)
+    plt.scatter(xs,ys, marker='o', color='purple')
+    positionTexts=[2,2,0.5,0.5]
+    for i in range(0,4):
+        plt.axhline(ys[i], color='orange', linestyle=':')
+        plt.text(positionTexts[i], ys[i], linelab[i], ha='left', va='center')
+    plt.savefig('./uid.0/pulseComparisson.png', bbox_inches='tight')
+    plt.show()
 
+
+def  graphModelsComparisson(xs,params,basedOn,yLabel):
+    plt.figure()
+
+    plt.title('Comparisson between models based on %s'%(basedOn))
+    plt.xlabel('Ordered position into the model series')
+    plt.ylabel(yLabel)
+    plt.xticks(fontsize=9)
+    plt.xticks(rotation=90)
+    star = mlines.Line2D([], [], color='k', marker='^', linestyle='None',markersize=8)
+    point = mlines.Line2D([], [], color='k', marker='o', linestyle='None',markersize=8)
+    trip = mlines.Line2D([], [], color='k', marker='d', linestyle='None',markersize=8)
+    handles = [Rectangle((0,0),1,1,color='#A63A46',ec="k"),Rectangle((0,0),1,1,color='#A67104',ec="k"),Rectangle((0,0),1,1,color='#920ADA',ec="k"),star,point,trip]
+    labels = ['IandF','IZH','FIU','BO','RS','GA']
+
+    #putTexts(plt,params['IandF'][3]['RS'],params['IandF'][0]['RS'],params['IandF'][2]['RS'])
+    if basedOn=='rewards' or basedOn=='steps':
+        plt.errorbar(params['IandF'][3]['RS'], params['IandF'][0]['RS'], params['IandF'][1]['RS'], fmt='o', linewidth=2, capsize=6, color='#A63A46')
+        plt.errorbar(params['IandF'][3]['GA'], params['IandF'][0]['GA'], params['IandF'][1]['GA'], fmt='d', linewidth=2, capsize=6, color='#A63A46')
+        plt.errorbar(params['IandF'][3]['BO'], params['IandF'][0]['BO'], params['IandF'][1]['BO'], fmt='^', linewidth=2, capsize=6, color='#A63A46')
+        plt.errorbar(params['IZH'][3]['RS'], params['IZH'][0]['RS'], params['IZH'][1]['RS'], fmt='o', linewidth=2, capsize=6, color='#A67104')
+        plt.errorbar(params['IZH'][3]['GA'], params['IZH'][0]['GA'], params['IZH'][1]['GA'], fmt='d', linewidth=2, capsize=6, color='#A67104')
+        plt.errorbar(params['IZH'][3]['BO'], params['IZH'][0]['BO'], params['IZH'][1]['BO'], fmt='^', linewidth=2, capsize=6, color='#A67104')
+        plt.errorbar(params['FIU'][3]['RS'], params['FIU'][0]['RS'], params['FIU'][1]['RS'], fmt='o', linewidth=2, capsize=6, color='#920ADA')
+        plt.errorbar(params['FIU'][3]['GA'], params['FIU'][0]['GA'], params['FIU'][1]['GA'], fmt='d', linewidth=2, capsize=6, color='#920ADA')
+        plt.errorbar(params['FIU'][3]['BO'], params['FIU'][0]['BO'], params['FIU'][1]['BO'], fmt='^', linewidth=2, capsize=6, color='#920ADA')
+        if basedOn == 'steps':
+            plt.axhline(y=100, linewidth=3, color='#ACF7B7', linestyle='dotted')
+            plt.axhline(y=150, linewidth=3, color='#7ED48B', linestyle='dotted')
+            plt.axhline(y=200, linewidth=3, color='#469C53', linestyle='dotted')
+            plt.axhline(y=250, linewidth=3, color='#16461D', linestyle='dotted')
+
+    elif basedOn=='minSteps':
+        plt.scatter(params['IandF'][2]['RS'], params['IandF'][0]['RS'], marker='o', color='#A63A46')
+        plt.scatter(params['IandF'][2]['GA'], params['IandF'][0]['GA'], marker='d', color='#A63A46')
+        plt.scatter(params['IandF'][2]['BO'], params['IandF'][0]['BO'], marker='^',  color='#A63A46')
+        plt.scatter(params['IZH'][2]['RS'], params['IZH'][0]['RS'], marker='o', color='#A67104')
+        plt.scatter(params['IZH'][2]['GA'], params['IZH'][0]['GA'], marker='d', color='#A67104')
+        plt.scatter(params['IZH'][2]['BO'], params['IZH'][0]['BO'], marker='^', color='#A67104')
+        plt.scatter(params['FIU'][2]['RS'], params['FIU'][0]['RS'], marker='o', color='#920ADA')
+        plt.scatter(params['FIU'][2]['GA'], params['FIU'][0]['GA'], marker='d', color='#920ADA')
+        plt.scatter(params['FIU'][2]['BO'], params['FIU'][0]['BO'], marker='^', color='#920ADA')
+        plt.axhline(y=100, linewidth=3, color='#ACF7B7', linestyle='dotted')
+        plt.axhline(y=150, linewidth=3, color='#7ED48B', linestyle='dotted')
+        plt.axhline(y=200, linewidth=3, color='#469C53', linestyle='dotted')
+        plt.axhline(y=250, linewidth=3, color='#16461D', linestyle='dotted')
+    if basedOn=='rewards':
+        plt.legend(handles, labels, loc='upper right')
+    elif basedOn=='steps':
+        plt.legend(handles,labels,loc='upper left')
+    elif basedOn=='minSteps':
+        plt.legend(handles,labels,loc='upper left')
+    plt.savefig('./uid.0/modelComparissonGraphs/%sModelsComparisson.png'%(basedOn), bbox_inches='tight')
+    plt.show()
+
+def putTexts(plt,xs,ys,configs):
+    for index in range(0,len(configs)):
+        plt.text(xs[index], ys[index], getProperText(configs[index]), horizontalalignment='center',fontsize=7.0)
+
+def getProperText(conf):
+    toRet=''
+    if conf[0:3]=='Ian':
+        toRet=conf[7:-1]
+    if conf[0:3]=='IZH':
+        toRet=conf[5:-1]
+    if conf[0:3]=='FIU':
+        toRet=conf[5:-1]
+    return toRet

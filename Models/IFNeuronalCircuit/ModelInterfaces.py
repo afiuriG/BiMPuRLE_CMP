@@ -1,3 +1,5 @@
+#This interface is intended to implement the interface for MountainCarContinous problem
+
 import xml.etree.ElementTree as ET
 import numpy as np
 #import np.random as rng

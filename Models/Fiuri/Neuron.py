@@ -81,7 +81,7 @@ class Neuron:
     def getLastActivaionTrace(self):
         return self.lastActivationTrace
     def recordActivationTrace(self):
-        self.lastActivationTrace.append(str(self.state))
+        self.lastActivationTrace.append(str(round(self.internalstate,3)))
 
     def setInternalState(self, st):
         self.internalstate = st

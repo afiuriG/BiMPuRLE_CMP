@@ -1,0 +1,1 @@
+docker run --name test9  -it   -v /tmp/dockerBim2:/RLEngine/uid.0:rw -e BIM_MOD=IZH -e BIM_ENV=MouCarCon -e BIM_WOR=1 -e BIM_GAM=1.0 -e BIM_UID=0 -e BIM_COMM=optimize -e BIM_OPT=RS -e BIM_STE=9 -e BIM_BAT=1 -e BIM_FOL=all bimpurle-docker
