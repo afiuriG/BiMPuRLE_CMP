@@ -1,0 +1,47 @@
+<?xml version="1.0" ?>
+<Model name="COPY">
+   <NeuralNetwork name="TW_IZH_Fiuri">
+      <neuron name="PVD" a="0.0" b="0.0" c="0.0" d="0.0" potencialV="0.0" recoveryU="0.0"/>
+      <neuron name="ALM" a="0.0" b="0.0" c="0.0" d="0.0" potencialV="0.0" recoveryU="0.0"/>
+      <neuron name="PLM" a="0.0" b="0.0" c="0.0" d="0.0" potencialV="0.0" recoveryU="0.0"/>
+      <neuron name="AVM" a="0.0" b="0.0" c="0.0" d="0.0" potencialV="0.0" recoveryU="0.0"/>
+      <neuron name="AVA" a="0.0" b="0.0" c="0.0" d="0.0" potencialV="0.0" recoveryU="0.0"/>
+      <neuron name="AVD" a="0.0" b="0.0" c="0.0" d="0.0" potencialV="0.0" recoveryU="0.0"/>
+      <neuron name="PVC" a="0.0" b="0.0" c="0.0" d="0.0" potencialV="0.0" recoveryU="0.0"/>
+      <neuron name="AVB" a="0.0" b="0.0" c="0.0" d="0.0" potencialV="0.0" recoveryU="0.0"/>
+      <neuron name="DVA" a="0.0" b="0.0" c="0.0" d="0.0" potencialV="0.0" recoveryU="0.0"/>
+      <neuron name="FWD" a="0.0" b="0.0" c="0.0" d="0.0" potencialV="0.0" recoveryU="0.0"/>
+      <neuron name="REV" a="0.0" b="0.0" c="0.0" d="0.0" potencialV="0.0" recoveryU="0.0"/>
+      <connection connType="ConnectionType.ChemIn" connSource="PVD" connTarget="AVA" connWeight="0.0" connSigma="0.0" testWeight="0.0" testSigma="0.0"/>
+      <connection connType="ConnectionType.ChemIn" connSource="PLM" connTarget="AVA" connWeight="0.0" connSigma="0.0" testWeight="0.0" testSigma="0.0"/>
+      <connection connType="ConnectionType.ChemEx" connSource="PVC" connTarget="AVA" connWeight="0.0" connSigma="0.0" testWeight="0.0" testSigma="0.0"/>
+      <connection connType="ConnectionType.ChemIn" connSource="AVB" connTarget="AVA" connWeight="0.0" connSigma="0.0" testWeight="0.0" testSigma="0.0"/>
+      <connection connType="ConnectionType.ChemEx" connSource="AVD" connTarget="AVA" connWeight="0.0" connSigma="0.0" testWeight="0.0" testSigma="0.0"/>
+      <connection connType="ConnectionType.ChemIn" connSource="PLM" connTarget="AVD" connWeight="0.0" connSigma="0.0" testWeight="0.0" testSigma="0.0"/>
+      <connection connType="ConnectionType.ChemEx" connSource="PVC" connTarget="AVD" connWeight="0.0" connSigma="0.0" testWeight="0.0" testSigma="0.0"/>
+      <connection connType="ConnectionType.ChemIn" connSource="AVA" connTarget="AVD" connWeight="0.0" connSigma="0.0" testWeight="0.0" testSigma="0.0"/>
+      <connection connType="ConnectionType.ChemIn" connSource="AVB" connTarget="AVD" connWeight="0.0" connSigma="0.0" testWeight="0.0" testSigma="0.0"/>
+      <connection connType="ConnectionType.AGJ" connSource="AVM" connTarget="AVD" connWeight="0.0" connSigma="0.0" testWeight="0.0" testSigma="0.0"/>
+      <connection connType="ConnectionType.ChemIn" connSource="ALM" connTarget="AVD" connWeight="0.0" connSigma="0.0" testWeight="0.0" testSigma="0.0"/>
+      <connection connType="ConnectionType.ChemIn" connSource="PVD" connTarget="PVC" connWeight="0.0" connSigma="0.0" testWeight="0.0" testSigma="0.0"/>
+      <connection connType="ConnectionType.AGJ" connSource="PLM" connTarget="PVC" connWeight="0.0" connSigma="0.0" testWeight="0.0" testSigma="0.0"/>
+      <connection connType="ConnectionType.ChemIn" connSource="AVA" connTarget="PVC" connWeight="0.0" connSigma="0.0" testWeight="0.0" testSigma="0.0"/>
+      <connection connType="ConnectionType.ChemEx" connSource="AVD" connTarget="PVC" connWeight="0.0" connSigma="0.0" testWeight="0.0" testSigma="0.0"/>
+      <connection connType="ConnectionType.ChemIn" connSource="AVM" connTarget="PVC" connWeight="0.0" connSigma="0.0" testWeight="0.0" testSigma="0.0"/>
+      <connection connType="ConnectionType.ChemIn" connSource="ALM" connTarget="PVC" connWeight="0.0" connSigma="0.0" testWeight="0.0" testSigma="0.0"/>
+      <connection connType="ConnectionType.ChemIn" connSource="DVA" connTarget="PVC" connWeight="0.0" connSigma="0.0" testWeight="0.0" testSigma="0.0"/>
+      <connection connType="ConnectionType.ChemEx" connSource="PVC" connTarget="AVB" connWeight="0.0" connSigma="0.0" testWeight="0.0" testSigma="0.0"/>
+      <connection connType="ConnectionType.ChemIn" connSource="AVA" connTarget="AVB" connWeight="0.0" connSigma="0.0" testWeight="0.0" testSigma="0.0"/>
+      <connection connType="ConnectionType.ChemEx" connSource="AVD" connTarget="AVB" connWeight="0.0" connSigma="0.0" testWeight="0.0" testSigma="0.0"/>
+      <connection connType="ConnectionType.ChemIn" connSource="PVD" connTarget="DVA" connWeight="0.0" connSigma="0.0" testWeight="0.0" testSigma="0.0"/>
+      <connection connType="ConnectionType.ChemIn" connSource="PLM" connTarget="DVA" connWeight="0.0" connSigma="0.0" testWeight="0.0" testSigma="0.0"/>
+      <connection connType="ConnectionType.ChemEx" connSource="PVC" connTarget="DVA" connWeight="0.0" connSigma="0.0" testWeight="0.0" testSigma="0.0"/>
+      <connection connType="ConnectionType.ChemEx" connSource="AVB" connTarget="FWD" connWeight="0.0" connSigma="0.0" testWeight="0.0" testSigma="0.0"/>
+      <connection connType="ConnectionType.ChemEx" connSource="AVA" connTarget="REV" connWeight="0.0" connSigma="0.0" testWeight="0.0" testSigma="0.0"/>
+   </NeuralNetwork>
+   <Interfaces>
+      <interface name="IN1" valleyVal="-0.3" value="0.0" minVal="-1.2" maxVal="0.6" positiveNeuron="PLM" negativeNeuron="AVM" type="IN"/>
+      <interface name="IN2" valleyVal="0.0" value="0.0" minVal="-0.1" maxVal="0.1" positiveNeuron="ALM" negativeNeuron="PVD" type="IN"/>
+      <interface name="OUT1" valleyVal="0.0" value="0" minVal="-1.0" maxVal="1.0" positiveNeuron="FWD" negativeNeuron="REV" type="OUT"/>
+   </Interfaces>
+</Model>
