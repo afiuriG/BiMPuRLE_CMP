@@ -1,2 +1,2 @@
 # BIMPuRLE
-Biological Inpired Multi Purpose Reinforcement Lerning Engine
+Biological Inspired Multi Purpose Reinforcement Lerning Engine
